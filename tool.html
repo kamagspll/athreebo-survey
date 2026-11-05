@@ -1,0 +1,142 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="robots" content="noindex,nofollow">
+<title>研修QR作成ツール</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcode-generator/1.4.4/qrcode.min.js"></script>
+<style>
+:root{--text:#111827;--sub:#475467;--muted:#667085;--line:#e7eaf2;--nav:#13161d;--blue:#3f6cff;--blue-soft:#eef3ff;--app:#f5f6fa;--orange-d:#c2410c;--orange-soft:#fff2e8}
+*{box-sizing:border-box}
+body{margin:0;background:linear-gradient(180deg,#f6f8ff,#e8eefb);color:var(--text);font:14px/1.7 -apple-system,BlinkMacSystemFont,"Segoe UI","Hiragino Sans","Yu Gothic UI","Meiryo",sans-serif;padding:28px 16px}
+.wrap{max-width:1040px;margin:0 auto;background:var(--app);border-radius:24px;overflow:hidden;box-shadow:0 18px 40px rgba(16,24,40,.12)}
+.top{background:var(--nav);color:#fff;padding:18px 26px}
+.top b{font-size:17px}.top span{display:block;font-size:12px;color:#c3cad7}
+.body{display:grid;grid-template-columns:minmax(0,1fr) 360px;gap:20px;padding:26px}
+.card{background:#fff;border:1px solid var(--line);border-radius:20px;padding:22px}
+h2{font-size:16px;margin:0 0 12px}
+.field{display:grid;gap:5px;margin-top:14px}.field:first-of-type{margin-top:0}
+label{font-size:12px;font-weight:800}
+input{font:inherit;border:1px solid #d0d5dd;border-radius:10px;padding:10px 12px;width:100%;background:#fff}
+.row{display:flex;gap:8px}.row input{flex:1;min-width:0}
+.dates{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.hint{font-size:11px;color:var(--muted)}
+button{font:inherit;font-weight:800;border-radius:12px;border:1px solid var(--line);background:#fff;padding:9px 14px;cursor:pointer;white-space:nowrap}
+button:hover{background:var(--blue-soft)}
+button.primary{background:#12151c;color:#fff;border-color:#12151c}
+.qr{display:grid;place-items:center;background:#fff;border:1px solid var(--line);border-radius:16px;padding:16px;min-height:300px}
+.qr img{width:100%;max-width:280px;image-rendering:pixelated}
+.url{font-size:12px;word-break:break-all;background:var(--blue-soft);border-radius:10px;padding:10px 12px;margin-top:12px;color:#253b80}
+.btns{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px}
+.note{background:var(--orange-soft);border-radius:12px;padding:12px 14px;font-size:12px;color:#7c2d12;margin-top:16px}
+ol{margin:6px 0 0;padding-left:20px}
+.toast{position:fixed;left:50%;bottom:24px;transform:translateX(-50%);background:var(--nav);color:#fff;border-radius:999px;padding:10px 18px;font-size:13px;font-weight:700;opacity:0;transition:opacity .2s}
+.toast.show{opacity:1}
+.res{border-radius:12px;padding:12px 14px;font-size:13px;margin-top:12px}
+.res.ok{background:#ecfdf3;color:#05603a}.res.ng{background:#fef3f2;color:#b42318}
+.res a{color:inherit;font-weight:800;word-break:break-all}
+button:disabled{opacity:.6;cursor:wait}
+@media(max-width:820px){.body{grid-template-columns:1fr}}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="top"><b>研修ごとのURL・QRコード作成</b><span>研修コードを決めて、配布用のURLとQRコード、スプレッドシートに貼る1行を作ります。</span></div>
+  <div class="body">
+    <div>
+      <div class="card">
+        <h2>1. 研修の情報</h2>
+        <div class="field"><label for="base">サーベイのURL（GitHub Pages）</label>
+          <input id="base" placeholder="https://ユーザー名.github.io/athreebo-survey/" oninput="update()">
+          <span class="hint">一度入れれば、このブラウザに記憶されます。</span></div>
+        <div class="field"><label for="tname">研修名</label><input id="tname" placeholder="例：ABC社 リーダー研修" oninput="update()"></div>
+        <div class="field"><label for="code">研修コード（合言葉）</label>
+          <div class="row"><input id="code" oninput="update()"><button onclick="newCode()">作り直す</button></div>
+          <span class="hint">推測されにくいよう、ランダムな8文字を自動で作ります。研修ごとに別のコードにしてください。</span></div>
+        <div class="field"><label>受講前の受付期間</label><div class="dates"><input type="date" id="preS" oninput="update()"><input type="date" id="preE" oninput="update()"></div></div>
+        <div class="field"><label>受講後の受付期間</label><div class="dates"><input type="date" id="postS" oninput="update()"><input type="date" id="postE" oninput="update()"></div></div>
+      </div>
+      <div class="card" style="margin-top:16px">
+        <h2>2. 研修を登録して、回答用スプレッドシートを作る</h2>
+        <p class="hint" style="margin:0 0 10px">ボタンを押すと、管理用スプレッドシートの「研修コード」シートにこの研修が登録され、この研修専用の「【研修名】サーベイ回答」が作られます。</p>
+        <div class="field"><label for="key">管理キー</label>
+          <input id="key" type="password" autocomplete="off" oninput="lsSet('qrtool_key',this.value.trim())">
+          <span class="hint">管理用スプレッドシートの「使い方」シートに記載しています。一度入れれば、このブラウザに記憶されます。</span></div>
+        <div class="btns"><button class="primary" id="regBtn" onclick="register()">登録してスプレッドシートを作成</button></div>
+        <div id="regOut"></div>
+        <div class="note">登録するまで、このQRコードを読んでも「現在ご利用いただけません」と表示されます。登録後に受付期間を変えるときや受付を止めるときは、「研修コード」シートの日付やG列（有効）のチェックを直してください（すぐに反映されます）。</div>
+        <details style="margin-top:12px"><summary class="hint" style="cursor:pointer">シートに手で登録する場合</summary>
+          <ol>
+            <li>下のボタンで1行分をコピー</li>
+            <li>「研修コード」シートの空いている行のA列を選んで貼り付け、G列（有効）にチェック</li>
+            <li>回答用スプレッドシートは、最初の回答が届いたときに自動で作られます</li>
+          </ol>
+          <div class="btns"><button onclick="copyRow()">スプレッドシート用の1行をコピー</button></div>
+        </details>
+      </div>
+    </div>
+    <div class="card">
+      <h2>3. 配布用のQRコード</h2>
+      <div class="qr" id="qr"><span class="hint">URLと研修コードを入れると表示されます</span></div>
+      <div class="url" id="url">—</div>
+      <div class="btns"><button class="primary" onclick="downloadQR()">QRコードを画像で保存</button><button onclick="copyUrl()">URLをコピー</button></div>
+    </div>
+  </div>
+</div>
+<div class="toast" id="toast"></div>
+<script>
+const $=id=>document.getElementById(id);
+function lsGet(k){try{return localStorage.getItem(k)}catch(e){return null}}
+function lsSet(k,v){try{localStorage.setItem(k,v)}catch(e){}}
+function rand(){const c="abcdefghjkmnpqrstuvwxyz23456789";const a=new Uint32Array(8);crypto.getRandomValues(a);return Array.from(a,x=>c[x%c.length]).join("")}
+function newCode(){$("code").value=rand();update()}
+function fullUrl(){let b=$("base").value.trim();const c=$("code").value.trim();if(!b||!c)return"";if(!/\/$/.test(b)&&!/\.html$/.test(b))b+="/";return b+"?k="+encodeURIComponent(c)}
+const API_URL="https://script.google.com/macros/s/AKfycbzv-s7vkrZjAReVjux6pEr7tyI8snHWGYuJ9L6vexkWiQ_eNfcYu8E9QGmmFESfE4lu/exec";
+let lastImg="",registered=null;
+function esc(s){return String(s).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]))}
+function showRes(ok,html){$("regOut").innerHTML=`<div class="res ${ok?"ok":"ng"}">${html}</div>`}
+async function register(){
+  const p={action:"create",key:$("key").value.trim(),code:$("code").value.trim(),name:$("tname").value.trim(),
+    preS:$("preS").value,preE:$("preE").value,postS:$("postS").value,postE:$("postE").value};
+  if(!p.name||!p.code){showRes(false,"研修名と研修コードを入れてください。");return}
+  if(![p.preS,p.preE,p.postS,p.postE].every(Boolean)){showRes(false,"受講前・受講後の受付期間（4つの日付）をすべて入れてください。");return}
+  if(!p.key){showRes(false,"管理キーを入れてください。");$("key").focus();return}
+  const b=$("regBtn");b.disabled=true;b.textContent="作成しています…（10秒ほどかかります）";$("regOut").innerHTML="";
+  try{
+    const res=await fetch(API_URL,{method:"POST",headers:{"Content-Type":"text/plain;charset=utf-8"},body:JSON.stringify(p)});
+    const j=await res.json();if(!j.ok)throw new Error(j.error||"error");
+    registered=p.code;
+    showRes(true,`<b>「${esc(j.result.name)}」を登録しました。</b>このQRコードで回答を受け付けられます。<br>回答用スプレッドシート：<a href="${esc(j.result.url)}" target="_blank" rel="noopener">開く</a>`);
+  }catch(e){
+    const m=String(e.message||e);
+    showRes(false,m==="BAD_KEY"?"管理キーが違います。管理用スプレッドシートの「使い方」シートにあるキーを入れ直してください。"
+      :m==="DUP_CODE"?"この研修コードはすでに登録されています。「作り直す」で別のコードにしてから、もう一度押してください。"
+      :/不明な操作/.test(m)?"Apps Script が古いバージョンのままです。新しい Code.gs を貼って「デプロイを管理」から新しいバージョンにしてください。"
+      :/Failed to fetch|NetworkError|JSON/.test(m)?"通信できませんでした。インターネット接続を確認して、もう一度お試しください。"
+      :esc(m));
+  }finally{b.disabled=false;b.textContent="登録してスプレッドシートを作成"}
+}
+function update(){
+  lsSet("qrtool_base",$("base").value.trim());
+  if(registered&&$("code").value.trim()!==registered){registered=null;$("regOut").innerHTML=""}
+  const u=fullUrl();$("url").textContent=u||"—";
+  if(!u||typeof qrcode==="undefined"){$("qr").innerHTML='<span class="hint">'+(typeof qrcode==="undefined"?"QRの部品を読み込めませんでした（インターネット接続が必要です）":"URLと研修コードを入れると表示されます")+'</span>';lastImg="";return}
+  const q=qrcode(0,"M");q.addData(u);q.make();lastImg=q.createDataURL(12,24);
+  $("qr").innerHTML=`<img src="${lastImg}" alt="QRコード">`;
+}
+function toast(t){const e=$("toast");e.textContent=t;e.classList.add("show");setTimeout(()=>e.classList.remove("show"),1600)}
+async function copy(t){try{await navigator.clipboard.writeText(t);toast("コピーしました")}catch(e){prompt("コピーしてください",t)}}
+function copyUrl(){const u=fullUrl();if(u)copy(u)}
+function fmt(v){return v?v.replace(/-/g,"/"):""}
+function copyRow(){
+  if(!$("code").value.trim()||!$("tname").value.trim()){toast("研修名と研修コードを入れてください");return}
+  copy([$("code").value.trim(),$("tname").value.trim(),fmt($("preS").value),fmt($("preE").value),fmt($("postS").value),fmt($("postE").value),"TRUE",""].join("\t"));
+}
+function downloadQR(){if(!lastImg)return;const a=document.createElement("a");a.href=lastImg;a.download=`QR_${$("tname").value.trim()||$("code").value.trim()}.gif`;a.click()}
+$("base").value=lsGet("qrtool_base")||"https://kamagspll.github.io/athreebo-survey/";
+$("key").value=lsGet("qrtool_key")||"";
+newCode();
+</script>
+</body>
+</html>
