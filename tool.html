@@ -98,7 +98,7 @@ function esc(s){return String(s).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",
 function showRes(ok,html){$("regOut").innerHTML=`<div class="res ${ok?"ok":"ng"}">${html}</div>`}
 async function register(){
   const p={action:"create",key:$("key").value.trim(),code:$("code").value.trim(),name:$("tname").value.trim(),
-    preS:$("preS").value,preE:$("preE").value,postS:$("postS").value,postE:$("postE").value};
+    preS:$("preS").value,preE:$("preE").value,postS:$("postS").value,postE:$("postE").value,qr:lastImg};
   if(!p.name||!p.code){showRes(false,"研修名と研修コードを入れてください。");return}
   if(![p.preS,p.preE,p.postS,p.postE].every(Boolean)){showRes(false,"受講前・受講後の受付期間（4つの日付）をすべて入れてください。");return}
   if(!p.key){showRes(false,"管理キーを入れてください。");$("key").focus();return}
@@ -107,7 +107,7 @@ async function register(){
     const res=await fetch(API_URL,{method:"POST",headers:{"Content-Type":"text/plain;charset=utf-8"},body:JSON.stringify(p)});
     const j=await res.json();if(!j.ok)throw new Error(j.error||"error");
     registered=p.code;
-    showRes(true,`<b>「${esc(j.result.name)}」を登録しました。</b>このQRコードで回答を受け付けられます。<br>回答用スプレッドシート：<a href="${esc(j.result.url)}" target="_blank" rel="noopener">開く</a>`);
+    showRes(true,`<b>「${esc(j.result.name)}」を登録しました。</b>このQRコードで回答を受け付けられます。${j.result.qr?"<br>QRコードの画像も「研修コード」シートと管理フォルダに保存しました。":""}<br>回答用スプレッドシート：<a href="${esc(j.result.url)}" target="_blank" rel="noopener">開く</a>`);
   }catch(e){
     const m=String(e.message||e);
     showRes(false,m==="BAD_KEY"?"管理キーが違います。管理用スプレッドシートの「使い方」シートにあるキーを入れ直してください。"
