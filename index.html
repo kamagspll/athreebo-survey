@@ -591,7 +591,7 @@ function vOverview(){
   const sc=scores(S.phase),{low,high}=classOf(sc),r=ranked(sc);
   const color=i=>low.includes(i)?"#f97316":high.includes(i)?"#3f6cff":"#98a2b3";
   const radarSvg=radar([{vals:sc.map(s=>s.mean),fill:"rgba(63,108,255,.15)",stroke:"#3f6cff",dots:sc.map(s=>color(s.i))}],
-    sc.map(s=>[s.name,f1(s.mean),low.includes(s.i)?"#c2410c":"#344054"]));
+    sc.map(s=>[s.name,f1(s.mean),low.includes(s.i)?"#c2410c":high.includes(s.i)?"#3158e6":"#344054"]));
   return `${saveBar()}<div class="eyebrow">STEP 3 ｜ 結果（${S.phase==="pre"?"受講前":"受講後の振り返り"}）</div>
   <h2>あなたの今の状態</h2>
   <p class="lead">仕事への向き合い方を6つの観点で整理しました。まずは「どこが強く、どこに伸びしろがあるか」を確認しましょう。</p>
