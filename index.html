@@ -264,11 +264,11 @@ button.tag.active{background:var(--ink);color:#fff;border-color:var(--ink)}
   <div class="body">
     <aside class="side">
       <div><h4>STEP 1</h4><div class="snav" id="navIntro"></div></div>
-      <div><h4>STEP 2　回答（全18問）</h4><div class="snav" id="navQ"></div></div>
+      <div><h4>STEP 2　回答（全<span class="nq">18</span>問）</h4><div class="snav" id="navQ"></div></div>
       <div><h4>STEP 3　結果</h4><div class="snav" id="navR"></div></div>
       <div class="side-progress">
         <div class="k">回答状況</div>
-        <div class="v" id="sideCount">0<small> / 18問</small></div>
+        <div class="v" id="sideCount">0<small> / <span class="nq">18</span>問</small></div>
         <div class="track" style="margin:8px 0 0"><div class="fill" id="sideFill" style="width:0"></div></div>
       </div>
     </aside>
@@ -325,7 +325,20 @@ const METHODS={
 };
 const LIKERT=["まったくあてはまらない","あまりあてはまらない","どちらともいえない","ややあてはまる","とてもあてはまる"];
 const SCALE_LABEL=["まったくあてはまらない","","どちらともいえない","","とてもあてはまる"];
-const ALLQ=ITEMS.flatMap(it=>it.qs.map(q=>q[0]));
+/* 設問の版：研修ごとに18問／30問（サーバーの info が返す ver）。30問は逆方向の質問（区分 "rev"）を含む */
+const QS18=ITEMS.map(it=>it.qs);
+const QS30={"A": [["A1", "判断が必要な場面で、自分なりの考えを持って判断している。", "自分の意思による判断", "自己選択思考", "mod"], ["A4", "判断に迷う場面では、上司や周囲から指示が出るまで動かずに待つことが多い。", "指示待ちの傾向（逆）", "自己選択思考", "rev"], ["A2", "依頼された仕事でも、自分が選べる進め方を考えて取り組んでいる。", "与えられた条件の中での選択", "自己選択思考", ""], ["A3", "仕事で問題に気づいたとき、自分が働きかけられることを見つけて動いている。", "自分から働きかける行動", "可変集中思考", ""], ["A5", "仕事のやり方は、工夫するよりこれまでどおりに進めることが多い。", "改善への消極性（逆）", "自己選択思考", "rev"]], "B": [["B1", "自分の仕事が、誰にどのように役立つかを具体的に説明できる。", "貢献の意味の理解", "意義創出思考", ""], ["B4", "自分の仕事が誰かの役に立っているという実感が、あまりない。", "貢献実感の乏しさ（逆）", "意義創出思考", "rev"], ["B2", "意味を感じにくい仕事にも、自分が得たい学びや経験を見いだしている。", "自分なりの意義づけ", "意義創出思考", ""], ["B3", "目の前の仕事が、自分の目指すことにどうつながるかを説明できる。", "仕事と目的のつながりの理解", "目的収束思考", ""], ["B5", "気が進まない仕事は、ただこなすだけになることが多い。", "意義づけの欠如（逆）", "意義創出思考", "rev"]], "C": [["C1", "複数の仕事があるとき、目指す成果に照らして優先順位を決めている。", "目的に沿った優先順位", "目的収束思考", ""], ["C4", "目の前の作業に追われ、目的との関係が薄いことに時間を使ってしまうことが多い。", "目的から外れた時間の使い方（逆）", "目的収束思考", "rev"], ["C2", "続けている作業でも、目的につながっていないと気づいたときは、取り組み方を見直している。", "目的に照らした取り組みの見直し", "目的収束思考", ""], ["C3", "目的の達成に向けて、自分が変えられないことより、働きかけられることに時間や力を使っている。", "力を向ける対象の選択", "可変集中思考", ""], ["C5", "その日に何を達成するかを決めないまま、仕事に取りかかることが多い。", "目標を決めない着手（逆）", "目的収束思考", "rev"]], "D": [["D1", "難しいと感じる仕事でも、これまでの経験だけで「自分にはできない」と決めず、試せる方法を探している。", "自分で感じる限界への向き合い方", "限界突破思考", ""], ["D4", "自分の能力は、努力してもあまり変わらないと思う。", "能力は変わらないという考え（逆）", "限界突破思考", "rev"], ["D2", "不安のある仕事に着手する前に、起こり得る問題への備えを具体的に考えている。", "挑戦前のリスクへの準備", "悲観的準備思考", ""], ["D3", "初めての仕事や難しい仕事では、まず試せる小さな一歩を決めて着手している。", "挑戦への最初の一歩", "階段的行動思考", ""], ["D5", "難しそうな仕事は、できるだけ他の人に任せたいと思う。", "挑戦の回避（逆）", "限界突破思考", "rev"]], "E": [["E1", "失敗や想定外の出来事の後、実際に何が起きたかを振り返っている。", "困難後の事実の振り返り", "逆境思考", ""], ["E4", "仕事で失敗した後、次の行動に移れるまでに時間がかかることが多い。", "立ち直りの遅さ（逆）", "逆境思考", "rev"], ["E2", "うまくいかなかった経験から、次の取り組みで変えることを具体的に決めている。", "振り返りから改善への接続", "逆境思考", ""], ["E3", "予定どおりに進まないとき、今から自分が変えられることを見つけて対応している。", "困難後の対応対象の切り替え", "可変集中思考", ""], ["E5", "うまくいかないことが続くと、取り組む意欲がなくなってしまう。", "意欲の低下（逆）", "逆境思考", "rev"]], "F": [["F1", "取り組むと決めた目標を、日々実行できる小さな行動に分けて進めている。", "日常的な行動への分解", "階段的行動思考", ""], ["F4", "新しい仕事や関心ごとに気を取られ、以前に決めた目標が途中で止まってしまうことが多い。", "目標の途中停止（逆）", "強制力活用思考", "rev"], ["F2", "行動を続けるために、予定への組み込みや周囲との約束など、実行しやすい仕組みを使っている。", "継続を支える仕組みの活用", "強制力活用思考", ""], ["F3", "すぐに成果が出なくても、将来必要になる学習や準備のために時間を確保して取り組んでいる。", "将来に向けた先行投資", "代価前払い思考", ""], ["F5", "数か月かかる目標は、途中で関心が薄れてしまうことが多い。", "長期目標への関心の薄れ（逆）", "階段的行動思考", "rev"]]};
+let VER=18,ALLQ=[],NQ=18,REV=new Set();
+function setVer(v){
+  VER=v===30?30:18;
+  ITEMS.forEach((it,i)=>{it.qs=VER===30?QS30["ABCDEF"[i]]:QS18[i];
+    it.alias=VER===30?(i===4?"いわゆる「レジリエンス」":i===5?"いわゆる「グリット（やり抜く力）」":""):""});
+  ALLQ=ITEMS.flatMap(it=>it.qs.map(q=>q[0]));NQ=ALLQ.length;
+  REV=new Set(ITEMS.flatMap(it=>it.qs.filter(q=>q[4]==="rev").map(q=>q[0])));
+  document.querySelectorAll(".nq").forEach(e=>e.textContent=NQ);
+}
+/* 逆方向の質問は点数を反転して集計（5→1、4→2…） */
+const sv=(id,v)=>typeof v!=="number"?v:(REV.has(id)?6-v:v);
 const LS_ME="athreebo_survey_me";        // B：このブラウザで使ったメールアドレス
 const LS_DRAFT="athreebo_survey_draft";  // 回答途中の下書き
 
@@ -343,11 +356,13 @@ async function callApi(action,data){
 const MOCK={
   _db(){try{return JSON.parse(localStorage.getItem("athreebo_mock_db")||"[]")}catch(e){return[]}},
   info(code){return new Promise((ok,ng)=>setTimeout(()=>{
-    if(!code)return ng(new Error("NO_CODE"));if(code==="invalid")return ng(new Error("INVALID_CODE"));
-    if(code==="closed")return ok({name:"デモ研修（受付終了）",open:"closed",pre:"10/1〜10/3",post:"10/20〜10/24"});
-    if(code==="pre")return ok({name:"デモ研修（受講前の受付中）",open:"pre",pre:"11/1〜11/30",post:"12/1〜12/12"});
-    if(code==="post")return ok({name:"デモ研修（受講後の受付中）",open:"post",pre:"10/1〜10/31",post:"11/1〜11/30"});
-    ok({name:"デモ研修",open:"both",pre:"11/1〜11/30",post:"11/1〜11/30"})},400))},
+    if(!code)return ng(new Error("NO_CODE"));
+    const ver=/30$/.test(code)?30:18,c=code.replace(/30$/,""),r=o=>ok(Object.assign(o,{ver}));
+    if(c==="invalid")return ng(new Error("INVALID_CODE"));
+    if(c==="closed")return r({name:"デモ研修（受付終了）",open:"closed",pre:"10/1〜10/3",post:"10/20〜10/24"});
+    if(c==="pre")return r({name:"デモ研修（受講前の受付中）",open:"pre",pre:"11/1〜11/30",post:"12/1〜12/12"});
+    if(c==="post")return r({name:"デモ研修（受講後の受付中）",open:"post",pre:"10/1〜10/31",post:"11/1〜11/30"});
+    r({name:"デモ研修"+(ver===30?"（30問）":""),open:"both",pre:"11/1〜11/30",post:"11/1〜11/30"})},400))},
   lookup(e,code){return new Promise(ok=>setTimeout(()=>{e=e.trim().toLowerCase();let pre=null,post=null,base=null;
     this._db().forEach(r=>{if(r.email!==e||r.code!==code)return;if(r.phase==="pre")pre=r;else post=r;if(r.name)base=r});
     const nm=base?base.name.trim():"";const parts=nm.split(/[\s　]+/);
@@ -380,7 +395,7 @@ const $=id=>document.getElementById(id);
 const esc=s=>String(s??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
 const A=()=>S.rec[S.phase]||{};
 const answered=p=>p?ALLQ.filter(id=>S.rec[p][id]!==undefined).length:0;
-const complete=p=>!!p&&answered(p)===18;
+const complete=p=>!!p&&answered(p)===NQ;
 const f1=v=>v==null?"—":v.toFixed(1);
 const sgn=v=>v>0.049?"+"+v.toFixed(1):v<-0.049?v.toFixed(1):"±0.0";
 const hasPre=()=>complete("pre");
@@ -388,13 +403,13 @@ const isEmail=s=>/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(s.trim());
 function fmtDate(iso){if(!iso)return"—";const d=new Date(iso);return `${d.getMonth()+1}/${d.getDate()}`}
 
 function scores(p){const a=S.rec[p];
-  return ITEMS.map((it,i)=>{const vals=it.qs.map(q=>a[q[0]]).filter(v=>typeof v==="number");
+  return ITEMS.map((it,i)=>{const vals=it.qs.map(q=>sv(q[0],a[q[0]])).filter(v=>typeof v==="number");
     return {i,name:it.name,n:vals.length,mean:vals.length>=2?vals.reduce((x,y)=>x+y,0)/vals.length:null}})}
 function ranked(sc){return sc.filter(s=>s.mean!=null).slice().sort((a,b)=>a.mean-b.mean||a.i-b.i)}
 function compare(){const pre=S.rec.pre,post=S.rec.post;
   return ITEMS.map((it,i)=>{const common=it.qs.map(q=>q[0]).filter(id=>typeof pre[id]==="number"&&typeof post[id]==="number");
     if(common.length<2)return {i,name:it.name,pre:null,post:null,d:null};
-    const m=o=>common.reduce((x,id)=>x+o[id],0)/common.length;const a=m(pre),b=m(post);return {i,name:it.name,pre:a,post:b,d:b-a}})}
+    const m=o=>common.reduce((x,id)=>x+sv(id,o[id]),0)/common.length;const a=m(pre),b=m(post);return {i,name:it.name,pre:a,post:b,d:b-a}})}
 
 /* ================= レーダー ================= */
 function radar(series,labels){
@@ -421,10 +436,10 @@ function resultViews(){return S.phase==="post"&&hasPre()?[["overview","全体結
 function renderSide(){
   $("navIntro").innerHTML=`<button class="${S.view==="intro"?"active":""}" onclick="goView('intro')"><span class="dot">i</span>はじめに</button>`;
   const done=complete(S.phase);
-  $("navQ").innerHTML=`<button ${S.phase?"":"disabled"} class="${S.view==="q"?"active":""}" onclick="goQ()"><span class="dot ${done?"done":""}">${done?"✓":"Q"}</span>質問 1〜18</button>`;
+  $("navQ").innerHTML=`<button ${S.phase?"":"disabled"} class="${S.view==="q"?"active":""}" onclick="goQ()"><span class="dot ${done?"done":""}">${done?"✓":"Q"}</span>質問 1〜${NQ}</button>`;
   const ok=done&&S.save!=="editing";
   $("navR").innerHTML=resultViews().map(([v,l])=>`<button ${ok?"":"disabled"} class="${S.view===v?"active":""}" onclick="goView('${v}')"><span class="dot">›</span>${l}</button>`).join("");
-  const n=answered(S.phase);$("sideCount").innerHTML=`${n}<small> / 18問</small>`;$("sideFill").style.width=n/18*100+"%";
+  const n=answered(S.phase);$("sideCount").innerHTML=`${n}<small> / ${NQ}問</small>`;$("sideFill").style.width=n/NQ*100+"%";
   const pill=$("phasePill");pill.hidden=!S.phase;pill.textContent=S.phase==="post"?"受講後の振り返り":"受講前";pill.className="pill"+(S.phase==="post"?" blue":"");
   $("whoLabel").textContent=S.phase&&S.name?S.name+" さん":"";
 }
@@ -492,9 +507,9 @@ function vIntro(){
   const locked=!!L||S.checking;
   return `<div class="eyebrow">STEP 1 ｜ はじめに</div>
   <h1>いまの仕事への向き合い方を振り返る</h1>
-  <p class="lead">18の質問で、現在の仕事への向き合い方を6つの観点から確認します。正解・不正解はありません。</p>
+  <p class="lead">${NQ}の質問で、現在の仕事への向き合い方を6つの観点から確認します。正解・不正解はありません。</p>
   ${trainingCard()}
-  <div class="facts"><div class="fact"><div class="k">質問数</div><div class="v">18問</div></div><div class="fact"><div class="k">所要時間</div><div class="v">約5分</div></div><div class="fact"><div class="k">対象期間</div><div class="v">直近2週間</div></div></div>
+  <div class="facts"><div class="fact"><div class="k">質問数</div><div class="v">${NQ}問</div></div><div class="fact"><div class="k">所要時間</div><div class="v">${NQ===30?"約7〜8分":"約5分"}</div></div><div class="fact"><div class="k">対象期間</div><div class="v">直近2週間</div></div></div>
   <div class="card idcard">
     <div class="field"><label for="emIn">メールアドレス<span class="req">必須</span></label>
       <input id="emIn" type="email" inputmode="email" autocomplete="email" value="${esc(S.email)}" placeholder="例：taro.yamada@example.co.jp" ${locked?"disabled":""} oninput="S.email=this.value">
@@ -541,10 +556,10 @@ let missingIds=[];
 function vQ(){
   const a=A(),n=answered(S.phase);
   const qs=ITEMS.flatMap(it=>it.qs);
-  return `<div class="eyebrow">STEP 2 ｜ ${S.phase==="post"?"受講後の振り返り":"受講前"}</div><h2>質問（全18問）</h2>
+  return `<div class="eyebrow">STEP 2 ｜ ${S.phase==="post"?"受講後の振り返り":"受講前"}</div><h2>質問（全${NQ}問）</h2>
   <p class="lead">${S.phase==="post"?"研修後、職場で実践した直近2週間":"直近2週間の仕事の場面"}を思い浮かべて、もっとも近いものを1つ選んでください。</p>
   ${S.phase==="pre"&&S.training&&S.training.open==="both"?`<div class="notice" style="margin-top:14px">はじめての回答のため、<b>受講前</b>として回答します。受講後の方は、受講前と同じメールアドレスか<button class="btn link" style="padding:0 2px" onclick="resetLookup()">確認してください</button>。</div>`:""}
-  <div class="qsticky"><div class="qprog"><span>回答状況</span><b id="qcount">${n} / 18問</b></div><div class="track"><div class="fill" id="qfill" style="width:${n/18*100}%"></div></div></div>
+  <div class="qsticky"><div class="qprog"><span>回答状況</span><b id="qcount">${n} / ${NQ}問</b></div><div class="track"><div class="fill" id="qfill" style="width:${n/NQ*100}%"></div></div></div>
   <div class="qlist">
   ${qs.map(([id,text],j)=>`<div role="radiogroup" aria-labelledby="t_${id}" class="qitem ${missingIds.includes(id)?"missing":""}" id="q_${id}">
     <div class="qtext"><span class="qno">Q${j+1}</span><span class="qt" id="t_${id}">${esc(text)}</span></div>
@@ -558,7 +573,7 @@ function vQ(){
 }
 function rec(id,v){A()[id]=v;missingIds=missingIds.filter(x=>x!==id);saveDraft();renderSide();
   const el=$("q_"+id);el.classList.remove("missing");
-  const n=answered(S.phase);$("qfill").style.width=n/18*100+"%";$("qcount").textContent=`${n} / 18問`;
+  const n=answered(S.phase);$("qfill").style.width=n/NQ*100+"%";$("qcount").textContent=`${n} / ${NQ}問`;
   if(!missingIds.length)$("err").textContent="";
   const nextId=ALLQ.slice(ALLQ.indexOf(id)+1).find(x=>A()[x]===undefined);
   if(nextId)setTimeout(()=>$("q_"+nextId).scrollIntoView({behavior:"smooth",block:"center"}),180);}
@@ -623,7 +638,7 @@ function vOverviewPost(){
   const row=c=>`<div style="margin-top:12px"><div style="display:flex;justify-content:space-between;align-items:baseline;gap:10px;margin-bottom:6px"><b style="font-size:15px">${c.name}</b><span class="nums">${f1(c.pre)} → ${f1(c.post)}<span class="delta ${c.d>0.049?"":c.d<-0.049?"down":"flat"}">${sgn(c.d)}</span></span></div><div class="bar"><div class="f-pre" style="width:${c.pre/5*100}%"></div><div class="f-blue" style="width:${c.post/5*100}%;opacity:${c.post>=c.pre?1:.55}"></div></div></div>`;
   return `${saveBar()}<div class="eyebrow">STEP 3 ｜ 結果（受講後の振り返り）</div>
   <h2>受講前から、何が変わった？</h2>
-  <p class="lead">同じ18問への回答を、受講前と比べています。変化の大きさだけでなく、実際に試した行動と照らして確認しましょう。</p>
+  <p class="lead">同じ${NQ}問への回答を、受講前と比べています。変化の大きさだけでなく、実際に試した行動と照らして確認しましょう。</p>
   <div class="hero-stats">
     <div class="hero-stat"><div class="k">自己評価が上がった項目</div><div class="v"><span class="big">${up.length}</span> / ${valid.length}</div></div>
     <div class="hero-stat"><div class="k">変化が最も大きい項目</div><div class="v">${best?best.name:"—"} <span style="color:#9ab7ff">${best?sgn(best.d):""}</span></div></div>
@@ -657,7 +672,7 @@ function vDetail(){
   <div class="grid2">
     <div class="stack">
       <div class="card">
-        <div style="display:flex;gap:8px;flex-wrap:wrap">${isLow?`<span class="tag orange">伸びしろ ${low.indexOf(i)+1}位</span>`:isHigh?'<span class="tag blue">強み</span>':'<span class="tag">中位項目</span>'}<span class="tag">${it.desc}</span></div>
+        <div style="display:flex;gap:8px;flex-wrap:wrap">${isLow?`<span class="tag orange">伸びしろ ${low.indexOf(i)+1}位</span>`:isHigh?'<span class="tag blue">強み</span>':'<span class="tag">中位項目</span>'}<span class="tag">${it.desc}</span>${it.alias?`<span class="tag blue">${it.alias}</span>`:""}</div>
         <h2 style="font-size:26px;margin-top:10px">${it.name}</h2>
         <div style="display:grid;grid-template-columns:1fr auto;gap:16px;align-items:end;margin-top:8px">
           <div><div class="bar" style="height:10px"><div class="${isLow?"f-orange":isHigh?"f-blue":"f-gray"}" style="width:${(s.mean||0)/5*100}%"></div></div>
@@ -673,7 +688,7 @@ function vDetail(){
       ${it.qs.map(([id,text,view,method])=>{const v=S.rec[S.phase][id],pv=S.rec.pre[id];
         return `<div class="qblock"><div class="q">${esc(text)}</div>
         ${cmpOn?lk(pv,"受講前",false)+lk(v,"受講後",true):lk(v,"回答",false)}
-        <div class="qmeta">回答：${LIKERT[v-1]}${post?`　／　関連する思考法：<b>${method}</b>（${view}）`:""}</div></div>`}).join("")}
+        <div class="qmeta">${REV.has(id)?'<b>逆方向の質問</b>（点数は反転して集計）　':""}回答：${LIKERT[v-1]}${post?`　／　関連する思考法：<b>${method}</b>（${view}）`:""}</div></div>`}).join("")}
     </div>
   </div>
   <div class="actions">${resultTools()}${cmpOn?`<button class="btn primary" onclick="goView('growth')">伸びしろを見る →</button>`:`<button class="btn" onclick="goView('overview')">← 全体結果に戻る</button>`}</div>`;
@@ -689,13 +704,13 @@ function vGrowth(){
     <div class="row"><div><span class="tag orange">伸びしろ ${k+1}位</span><div class="title">${s.name}</div><div class="small muted">${ITEMS[s.i].desc}</div></div>
     <div style="text-align:right">${c.pre!=null?`<div style="font-size:14px;font-weight:800;color:#667085">${f1(c.pre)} →</div>`:""}<div class="improve">${f1(s.mean)}</div>${c.d!=null?`<span class="tag ${c.d>0.049?"blue":"orange"}" style="margin-top:6px">${sgn(c.d)}</span>`:""}</div></div>
     <div class="mtable"><div class="h"><div>設問ごとの回答</div><div>前 → 後</div></div>
-    ${ITEMS[s.i].qs.map(([id,text])=>{const a=S.rec.pre[id],b=S.rec.post[id];const cls=b>a?"up":"stay";
+    ${ITEMS[s.i].qs.map(([id,text])=>{const a=S.rec.pre[id],b=S.rec.post[id];const cls=sv(id,b)>sv(id,a)?"up":"stay";
       return `<div class="l"><div>${esc(text)}</div><div class="chg ${cls}">${a??"—"} → ${b}${cls==="up"?" ↑":""}</div></div>`}).join("")}</div></div>`}).join("")}</div>
   <div class="actions">${resultTools()}<button class="btn primary" onclick="goView('methods')">この2つに関連する思考法を見る →</button></div>`;
 }
 function recommend(){
   const g=growthItems(),post=S.rec.post,pre=S.rec.pre,out=[];
-  const cand=[];g.forEach((s,gi)=>ITEMS[s.i].qs.forEach(q=>{const v=post[q[0]];if(typeof v==="number")cand.push({gi,item:s.i,q,v})}));
+  const cand=[];g.forEach((s,gi)=>ITEMS[s.i].qs.filter(q=>q[4]!=="rev").forEach(q=>{const v=post[q[0]];if(typeof v==="number")cand.push({gi,item:s.i,q,v})}));
   cand.sort((a,b)=>a.v-b.v||a.gi-b.gi);
   [0,1].forEach(gi=>{const c=cand.find(x=>x.gi===gi&&!out.some(o=>o.q[3]===x.q[3]));if(c)out.push(c)});
   for(const c of cand){if(out.length>=3)break;if(!out.some(o=>o.q[3]===c.q[3]))out.push(c)}
@@ -720,20 +735,22 @@ function vMethods(){
 }
 
 /* ================= プレビュー用 ================= */
+const DEMO30={pre:[3, 2, 4, 4, 3, 3, 2, 4, 4, 2, 2, 3, 3, 3, 3, 2, 4, 3, 3, 3, 3, 2, 4, 4, 3, 2, 3, 3, 3, 3],post:[3, 1, 4, 5, 2, 4, 1, 5, 4, 1, 2, 2, 3, 4, 2, 3, 3, 4, 3, 2, 3, 1, 4, 5, 2, 3, 2, 4, 3, 2]};
 const DEMO={pre:[4,4,3,4,4,4,3,2,3,4,3,3,3,3,3,2,3,2],post:[4,4,4,4,4,5,3,3,3,4,3,3,4,4,3,3,3,2]};
 function demo(p){
   if(!S.lookup){alert("先にメールアドレスとお名前を入れて「次へ」を押してください。");return}
   if(p==="pre"){if(S.phase!=="pre")startPre()}else{if(!S.lookup.pre){alert("このメールアドレスには受講前の回答がありません。");return}if(S.phase!=="post")startPost()}
-  ALLQ.forEach((id,k)=>S.rec[p][id]=DEMO[p][k]);saveDraft();S.view="q";render();
+  ALLQ.forEach((id,k)=>S.rec[p][id]=(VER===30?DEMO30:DEMO)[p][k]);saveDraft();S.view="q";render();
 }
 function clearMock(){if(confirm("プレビューで保存したデータを消しますか？")){lsDel("athreebo_mock_db");lsDel(LS_DRAFT);lsDel(LS_ME);location.reload()}}
 
 if(IS_LOCAL)$("previewBar").hidden=false;
+setVer(18);
 render(false);
 (async()=>{
   S.code=await getCode();
   if(!S.code){S.blocked="NO_CODE";render(false);return}
-  try{S.training=await API.info(S.code);if(S.training.open==="closed")S.blocked="CLOSED"}
+  try{S.training=await API.info(S.code);setVer(S.training.ver===30?30:18);if(S.training.open==="closed")S.blocked="CLOSED"}
   catch(e){if(!apiError(e))S.blocked="NET"}
   render(false);
 })();

@@ -18,7 +18,7 @@ body{margin:0;background:linear-gradient(180deg,#f6f8ff,#e8eefb);color:var(--tex
 h2{font-size:16px;margin:0 0 12px}
 .field{display:grid;gap:5px;margin-top:14px}.field:first-of-type{margin-top:0}
 label{font-size:12px;font-weight:800}
-input{font:inherit;border:1px solid #d0d5dd;border-radius:10px;padding:10px 12px;width:100%;background:#fff}
+input,select{font:inherit;border:1px solid #d0d5dd;border-radius:10px;padding:10px 12px;width:100%;background:#fff}
 .row{display:flex;gap:8px}.row input{flex:1;min-width:0}
 .dates{display:grid;grid-template-columns:1fr 1fr;gap:10px}
 .hint{font-size:11px;color:var(--muted)}
@@ -51,6 +51,9 @@ button:disabled{opacity:.6;cursor:wait}
           <input id="base" placeholder="https://ユーザー名.github.io/athreebo-survey/" oninput="update()">
           <span class="hint">一度入れれば、このブラウザに記憶されます。</span></div>
         <div class="field"><label for="tname">研修名</label><input id="tname" placeholder="例：ABC社 リーダー研修" oninput="update()"></div>
+        <div class="field"><label for="ver">設問の数</label>
+          <select id="ver"><option value="30" selected>30問（1項目5問・逆方向の質問を含む）</option><option value="18">18問（これまでの版）</option></select>
+          <span class="hint">受講前と受講後は同じ設問で比べるため、登録後は変えないでください。</span></div>
         <div class="field"><label for="code">研修コード（合言葉）</label>
           <div class="row"><input id="code" oninput="update()"><button onclick="newCode()">作り直す</button></div>
           <span class="hint">推測されにくいよう、ランダムな8文字を自動で作ります。研修ごとに別のコードにしてください。</span></div>
@@ -70,6 +73,7 @@ button:disabled{opacity:.6;cursor:wait}
           <ol>
             <li>下のボタンで1行分をコピー</li>
             <li>「研修コード」シートの空いている行のA列を選んで貼り付け、G列（有効）にチェック</li>
+            <li>30問にするときは、L列（設問版）に 30 と入れる（空欄は18問）</li>
             <li>回答用スプレッドシートは、最初の回答が届いたときに自動で作られます</li>
           </ol>
           <div class="btns"><button onclick="copyRow()">スプレッドシート用の1行をコピー</button></div>
@@ -98,7 +102,7 @@ function esc(s){return String(s).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",
 function showRes(ok,html){$("regOut").innerHTML=`<div class="res ${ok?"ok":"ng"}">${html}</div>`}
 async function register(){
   const p={action:"create",key:$("key").value.trim(),code:$("code").value.trim(),name:$("tname").value.trim(),
-    preS:$("preS").value,preE:$("preE").value,postS:$("postS").value,postE:$("postE").value,qr:lastImg};
+    preS:$("preS").value,preE:$("preE").value,postS:$("postS").value,postE:$("postE").value,qr:lastImg,ver:Number($("ver").value)};
   if(!p.name||!p.code){showRes(false,"研修名と研修コードを入れてください。");return}
   if(![p.preS,p.preE,p.postS,p.postE].every(Boolean)){showRes(false,"受講前・受講後の受付期間（4つの日付）をすべて入れてください。");return}
   if(!p.key){showRes(false,"管理キーを入れてください。");$("key").focus();return}
@@ -107,7 +111,7 @@ async function register(){
     const res=await fetch(API_URL,{method:"POST",headers:{"Content-Type":"text/plain;charset=utf-8"},body:JSON.stringify(p)});
     const j=await res.json();if(!j.ok)throw new Error(j.error||"error");
     registered=p.code;
-    showRes(true,`<b>「${esc(j.result.name)}」を登録しました。</b>このQRコードで回答を受け付けられます。${j.result.qr?"<br>QRコードの画像も「研修コード」シートと管理フォルダに保存しました。":""}<br>回答用スプレッドシート：<a href="${esc(j.result.url)}" target="_blank" rel="noopener">開く</a>`);
+    showRes(true,`<b>「${esc(j.result.name)}」を登録しました（${j.result.ver===30?"30問":"18問"}）。</b>このQRコードで回答を受け付けられます。${j.result.ver!==p.ver?"<br><b>※ Apps Script が古いため18問で登録されました。新しい Code.gs を反映してください。</b>":""}${j.result.qr?"<br>QRコードの画像も「研修コード」シートと管理フォルダに保存しました。":""}<br>回答用スプレッドシート：<a href="${esc(j.result.url)}" target="_blank" rel="noopener">開く</a>`);
   }catch(e){
     const m=String(e.message||e);
     showRes(false,m==="BAD_KEY"?"管理キーが違います。管理用スプレッドシートの「使い方」シートにあるキーを入れ直してください。"
